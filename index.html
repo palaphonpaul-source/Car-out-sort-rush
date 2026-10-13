@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Car Out: Sort Rush</title>
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#14121f;--panel:#201d33;--ink:#f6f3ff;--mut:#9b95bd;--yel:#ffc400;--red:#ff4d5e;--cyan:#31d7ff;--ok:#5dff9a;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:radial-gradient(circle at 50% -10%,#3a2a6b,var(--bg) 60%);color:var(--ink);font-family:"Kanit","Prompt",system-ui,sans-serif;min-height:100vh}
+.app{width:100%;max-width:640px;margin:0 auto;padding:16px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;min-height:100vh;justify-content:center}
+h1{font-size:44px;margin:0;line-height:1;font-weight:800;font-style:italic;color:var(--yel);text-shadow:0 4px 0 #a15b00}
+h2{margin:0 0 6px;font-size:21px}
+p{margin:6px 0;line-height:1.5}
+.mut{color:var(--mut);font-size:14px}
+.hud{background:var(--panel);border-radius:16px;padding:10px 26px;display:flex;flex-direction:column;align-items:center;gap:2px}
+.big{font-size:30px;font-weight:800;line-height:1.1}
+.warn{color:var(--red)}
+button{font:inherit;font-weight:700;border:0;border-radius:12px;padding:12px 26px;background:var(--yel);color:#2a1b00;box-shadow:0 4px 0 #a15b00;cursor:pointer}
+button:active{transform:translateY(3px);box-shadow:0 1px 0 #a15b00}
+button.alt{background:var(--panel);color:var(--ink);box-shadow:0 4px 0 #0c0a16;border:1px solid #3a3560}
+.row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.scroller{max-width:100%;overflow-x:auto;padding:4px 0}
+.lotbox{background:#2b2a36;border-radius:16px;padding:26px 10px 12px;position:relative;margin:0 auto;width:fit-content}
+.lotbox:before,.lotbox:after{position:absolute;top:6px;font-size:12px;color:var(--yel);font-weight:700}
+.lotbox:before{content:"ออกก่อน";left:12px}.lotbox:after{content:"ออกท้าย";right:12px}
+.lot{position:relative;margin:0 auto;background:repeating-linear-gradient(90deg,transparent 0 calc(var(--w) - 2px),#ffffff44 0 var(--w))}
+.car{position:absolute;top:0;left:calc(var(--i)*var(--w));width:calc(var(--w) - 8px);margin:0 4px;height:100%;border-radius:calc(var(--w)*.25);
+background:linear-gradient(#0003,transparent 30%,#0004),hsl(var(--h) 85% 55%);display:grid;place-items:center;cursor:pointer;
+transition:left .4s,transform .5s,opacity .5s,box-shadow .2s;box-shadow:0 4px 0 #0006}
+.car:before{content:"";position:absolute;top:14%;left:12%;right:12%;height:20%;border-radius:6px;background:#10142799}
+.car b{background:#fff;color:#1b1630;border-radius:8px;padding:0 calc(var(--w)*.14);font-size:calc(var(--w)*.4);line-height:1.3;margin-top:25%}
+.car.sel{transform:translateY(-12px);box-shadow:0 0 0 3px var(--yel),0 0 18px var(--yel)}
+.car.hi{box-shadow:0 0 0 3px var(--cyan),0 0 14px var(--cyan)}
+.go .car{transform:translateY(-190%);opacity:0;transition:transform .7s ease-in,opacity .7s;transition-delay:calc(var(--i)*.22s)}
+.stars{font-size:30px;color:var(--yel);letter-spacing:3px}
+.ov{position:fixed;inset:0;background:#0009;display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:16px;z-index:9}
+.card{background:var(--panel);border:2px solid #4a3f86;border-radius:18px;padding:20px;max-width:560px;width:100%;margin:auto;text-align:center}
+.bot{background:#15122a;border-radius:12px;padding:8px;margin:8px 0}
+.bot .bh{display:flex;justify-content:space-between;font-weight:700;font-size:14px;margin-bottom:6px}
+.win{color:var(--ok)}
+/* คำแนะนำพร้อมลูกศร */
+.spot{outline:3px solid var(--yel);outline-offset:4px;border-radius:16px;position:relative;z-index:11;animation:pulse 1s infinite alternate}
+@keyframes pulse{to{outline-offset:8px}}
+#coach{position:absolute;z-index:12;width:260px;background:var(--yel);color:#2a1b00;border-radius:14px;padding:12px 14px;font-weight:700;display:none;box-shadow:0 6px 0 #a15b00}
+#coach:before{content:"";position:absolute;top:-12px;left:var(--ax,120px);border:10px solid transparent;border-top:0;border-bottom:12px solid var(--yel);animation:bob .6s infinite alternate}
+@keyframes bob{to{transform:translateY(-6px)}}
+#coach button{margin-top:8px;padding:8px 22px;background:#2a1b00;color:var(--yel);box-shadow:none}
+#shade{position:fixed;inset:0;background:#0007;z-index:10;display:none}
+.pred{background:var(--panel);border:2px solid #4a3f86;border-radius:16px;padding:14px;width:min(100%,420px)}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.opts button{padding:12px 6px;font-size:18px}
+table{border-collapse:collapse;width:100%;margin:10px 0;font-size:14px}
+td,th{border-bottom:1px solid #3a3560;padding:7px 4px}
+th{color:var(--mut);font-weight:600}
+@media(prefers-reduced-motion:reduce){.car,.spot,#coach:before{transition:none;animation:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div id="start">
+    <h1>CAR OUT<br>SORT RUSH</h1>
+    <p class="mut">เรียงรถให้ออกตามคิว</p>
+    <div class="row"><button onclick="startLevel(0)">เล่น</button><button class="alt" onclick="showRules()">วิธีให้คะแนน</button></div>
+  </div>
+
+  <div id="game" style="display:none;width:100%">
+    <div style="display:flex;flex-direction:column;align-items:center;gap:14px">
+      <div class="mut" id="lvname"></div>
+      <div class="hud" id="hudbox"><div class="big"><span id="unit"></span> <span id="mv">0</span>/<span id="lim">0</span></div><div class="mut" id="goal"></div></div>
+      <div class="scroller"><div class="lotbox" id="lotbox"><div class="lot" id="lot"></div></div></div>
+      <div class="pred" id="pred" style="display:none"></div>
+      <div class="mut" id="hint"></div>
+      <div class="row"><button class="alt" onclick="restartLevel()">รีเซ็ต</button><button class="alt" id="hbtn" onclick="useHint()">💡 คำใบ้ (−30)</button><button class="alt" onclick="showRules()">วิธีให้คะแนน</button></div>
+      <div class="mut">คะแนน <b id="score">0</b></div>
+    </div>
+  </div>
+</div>
+<div id="shade"></div>
+<div id="coach"><span id="ctext"></span><br><button id="cnext">Next</button></div>
+<div class="ov" id="ov"><div class="card" id="ovc"></div></div>
+
+<script>
+/* ==========================================================
+   CAR OUT: SORT RUSH
+   - ผู้เล่นเรียงรถเอง มีโควตา (ด่านสลับ = แบบ Selection, ด่านแทรก = แบบ Insertion)
+   - ก่อนเล่นต้อง "เลือก" ว่าจะใช้ algorithm ไหน (Selection / Insertion / Bubble / Merge)
+     ที่ทำงานน้อยที่สุดกับลานนี้ (แต่ละด่านวัดคนละเกณฑ์: เปรียบเทียบ หรือ สลับ/ย้าย)
+   - เลือกผิด = ได้ดาวสูงสุดแค่ 2
+   - บอททั้ง 4 ตัวเรียงลานเดียวกันให้ดูพร้อมกัน แล้วเฉลยว่าตัวไหนชนะ
+   ========================================================== */
+
+/* ---------- 1) Sorting Algorithms (แกนของเกม) ---------- */
+
+// SELECTION SORT: หาตัวที่น้อยสุดในส่วนที่ยังไม่เรียง แล้วสลับไปไว้หน้าสุดของส่วนนั้น
+// รอบละ 1 สลับอย่างมาก -> สลับรวมไม่เกิน N-1 ครั้ง (เหมาะเมื่อ "การสลับ" แพง)
+function selectionSort(src){
+  const a = src.slice(); let cmp = 0, mv = 0; const steps = [];
+  for(let i = 0; i < a.length - 1; i++){
+    let m = i;                                   // m = ตำแหน่งของตัวที่น้อยสุดที่เจอ
+    for(let j = i + 1; j < a.length; j++){
+      cmp++;                                     // นับการเปรียบเทียบ
+      if(a[j] < a[m]) m = j;
+    }
+    if(m !== i){ [a[i], a[m]] = [a[m], a[i]]; mv++; }  // สลับเมื่อจำเป็นเท่านั้น
+    steps.push({a: a.slice(), cmp, mv, hi: [i, m]});   // เก็บภาพทุกรอบไว้เล่นแอนิเมชัน
+  }
+  return {steps, cmp, mv};
+}
+
+// INSERTION SORT: เหมือนจัดไพ่ในมือ หยิบตัวถัดไป (key) แล้วเลื่อนตัวที่ใหญ่กว่าไปทางขวา
+// จนเจอที่ว่างให้ key แทรกลงไป
+// การเลื่อน 1 ช่อง = สลับรถติดกัน 1 ครั้ง จึงนับเป็น 1 move (เท่ากับจำนวน inversion)
+// ถ้าข้อมูลเกือบเรียงจะเลื่อนน้อยมาก (ใกล้ O(N)) แต่ถ้ากลับด้านจะช้าเป็น O(N^2)
+function insertionSort(src){
+  const a = src.slice(); let cmp = 0, mv = 0; const steps = [];
+  for(let i = 1; i < a.length; i++){
+    const key = a[i]; let p = i;
+    while(p > 0){
+      cmp++;
+      if(a[p - 1] > key){ a[p] = a[p - 1]; p--; mv++; }   // เลื่อนตัวใหญ่ไปขวา 1 ช่อง
+      else break;                                         // เจอที่แล้ว หยุด
+    }
+    a[p] = key;                                           // แทรก key ลงตำแหน่งที่ถูก
+    steps.push({a: a.slice(), cmp, mv, hi: [p]});
+  }
+  return {steps, cmp, mv};
+}
+
+// BUBBLE SORT: เทียบคู่ติดกันจากซ้ายไปขวา ถ้าซ้ายใหญ่กว่าก็สลับ ทำให้ตัวใหญ่สุด "ลอย" ไปท้ายสุดทุกรอบ
+// รอบถัดไปไม่ต้องเทียบถึงตำแหน่งท้ายที่เรียงแล้ว (ตามสไลด์) และถ้ารอบไหนไม่มีการสลับเลย = เรียงเสร็จ หยุดได้ทันที
+// (เวอร์ชัน shortBubbleSort ในแล็บ) เปรียบเทียบสูงสุด N(N-1)/2 ครั้ง สลับ = จำนวน inversion
+function bubbleSort(src){
+  const a = src.slice(); let cmp = 0, mv = 0; const steps = [];
+  for(let pass = a.length - 1; pass > 0; pass--){
+    let swapped = false;                         // ธงเช็กว่ารอบนี้มีการสลับไหม
+    for(let i = 0; i < pass; i++){
+      cmp++;                                     // นับการเปรียบเทียบ
+      if(a[i] > a[i + 1]){ [a[i], a[i + 1]] = [a[i + 1], a[i]]; mv++; swapped = true; }
+    }
+    steps.push({a: a.slice(), cmp, mv, hi: [pass]});   // pass = ตำแหน่งที่ตัวใหญ่สุดของรอบนี้ไปนอนแล้ว
+    if(!swapped) break;                          // ไม่มีการสลับ = เรียงแล้ว หยุดก่อนได้ (best case ~ O(N))
+  }
+  return {steps, cmp, mv};
+}
+
+// MERGE SORT: แบ่งครึ่ง -> เรียงแต่ละครึ่งแบบ recursive -> รวม (merge) สองครึ่งที่เรียงแล้วให้เป็นหนึ่งเดียว
+// ตอน merge เทียบหัวแถวของ L กับ R แล้วหยิบตัวน้อยกว่าลงไปก่อน (<= เพื่อให้ stable)
+// เปรียบเทียบประมาณ N log N ครั้งเสมอ ไม่ว่าข้อมูลเรียงมาแค่ไหน แต่ต้องใช้ที่ว่างเพิ่ม (L, R)
+// mv = จำนวนครั้งที่ "เขียนรถลงช่อง" ระหว่างรวม
+function mergeSort(src){
+  const a = src.slice(); let cmp = 0, mv = 0; const steps = [];
+  function ms(lo, hi){                           // จัดการช่วง [lo, hi)
+    if(hi - lo < 2) return;                      // มี 0-1 คัน = เรียงอยู่แล้ว (base case)
+    const mid = (lo + hi) >> 1;
+    ms(lo, mid); ms(mid, hi);                    // แบ่งครึ่งแล้วเรียงซ้าย/ขวาก่อน
+    const L = a.slice(lo, mid), R = a.slice(mid, hi);
+    let i = 0, j = 0, k = lo;
+    while(i < L.length && j < R.length){         // รวม: หยิบตัวน้อยกว่าของหัวแถวสองฝั่ง
+      cmp++;
+      if(L[i] <= R[j]) a[k++] = L[i++]; else a[k++] = R[j++];
+      mv++;
+    }
+    while(i < L.length){ a[k++] = L[i++]; mv++; }   // เก็บตัวที่เหลือฝั่งซ้าย
+    while(j < R.length){ a[k++] = R[j++]; mv++; }   // เก็บตัวที่เหลือฝั่งขวา
+    steps.push({a: a.slice(), cmp, mv, hi: Array.from({length: hi - lo}, (_, x) => lo + x)});
+  }
+  ms(0, a.length);
+  return {steps, cmp, mv};
+}
+
+// จำนวนสลับขั้นต่ำ (สลับคู่ใดก็ได้) = N - จำนวน cycle ของ permutation ใช้เป็นเกณฑ์ 3 ดาวด่านสลับ
+function minSwaps(a){
+  const seen = new Array(a.length).fill(false); let cycles = 0;
+  for(let i = 0; i < a.length; i++){
+    if(seen[i]) continue; cycles++;
+    for(let j = i; !seen[j]; j = a[j] - 1) seen[j] = true;
+  }
+  return a.length - cycles;
+}
+
+/* ---------- 2) ข้อมูลด่าน (mode: swap = สลับ 2 คัน, ins = แทรกรถ 1 คันเข้าช่องใหม่) ---------- */
+const LEVELS = [
+  // m = เกณฑ์ที่ใช้ตัดสินว่า algorithm ไหน "ดีที่สุด" ของด่านนั้น (cmp = เปรียบเทียบ, mv = สลับ/ย้าย)
+  {n:'ด่าน 1: ซอยเล็ก', mode:'swap', m:'cmp', d:[2,1,3,4,6,5,7]},
+  {n:'ด่าน 2: ลานกลับหัว', mode:'swap', m:'mv', d:[8,7,6,5,4,3,2,1]},
+  {n:'ด่าน 3: ชั่วโมงเร่งด่วน', mode:'swap', m:'cmp', d:[4,9,2,7,1,8,3,6,5]},
+  {n:'ด่าน 4: จัดไพ่แบบแทรก', mode:'ins', m:'cmp', d:[4,1,3,2,6,5,8,7]}
+];
+// algorithm ที่ให้เลือก 4 ตัว และเกณฑ์วัด
+const ALG = {sel:'Selection', ins:'Insertion', bub:'Bubble', mer:'Merge'};
+const ORDER = ['sel','ins','bub','mer'];
+const METRIC = {cmp:'เปรียบเทียบ', mv:'สลับ/ย้าย'};
+// เหตุผลที่ algorithm แต่ละตัวชนะ (แสดงในหน้าเฉลย)
+const WHY = {
+  sel:'Selection สลับได้อย่างมากรอบละ 1 ครั้ง (รวมไม่เกิน N−1) จึงเหมาะเมื่อ "การสลับ" แพง',
+  ins:'Insertion เทียบ/เลื่อนเฉพาะคันที่อยู่ผิดที่ ยิ่งข้อมูลเกือบเรียงยิ่งเร็ว (ใกล้ O(N))',
+  bub:'Bubble หยุดทันทีเมื่อรอบไหนไม่มีการสลับ จึงเร็วมากเมื่อข้อมูลเกือบเรียงอยู่แล้ว',
+  mer:'Merge แบ่งครึ่งแล้วรวม เทียบประมาณ N log N ไม่ว่าข้อมูลจะสับสนแค่ไหน ชนะเมื่อข้อมูลยุ่งเหยิง'
+};
+// เฉลย = algorithm ที่ค่าตามเกณฑ์น้อยที่สุด (คำนวณจากการรันจริง เฉลยจึงถูกเสมอ)
+function makeQ(m){
+  const best = ORDER.reduce((b, k) => R[k][m] < R[b][m] ? k : b, ORDER[0]);
+  return {m, a:best, t:'ลานนี้ algorithm ไหนต้อง "' + METRIC[m] + '" น้อยที่สุด?'};
+}
+const $ = id => document.getElementById(id);
+let Q, R, pending=false, guess, L=0, mode, data, cur, moves=0, limit=0, opt=0, two=0, S, I, pick=null, locked=true, total=0, predOK=false, lot, seen0=false, seen3=false, hints=0;
+
+/* ---------- 3) ลานจอด (วาดรถ) ---------- */
+function makeLot(el, arr, w, tap){
+  el.innerHTML = ''; el.classList.remove('go');
+  el.style.setProperty('--w', w + 'px');
+  el.style.width = arr.length * w + 'px'; el.style.height = w * 1.7 + 'px';
+  const cars = {};
+  arr.slice().sort((x,y)=>x-y).forEach(v=>{
+    const c = document.createElement('div'); c.className = 'car';
+    c.style.setProperty('--h', (v * 47) % 360); c.innerHTML = '<b>' + v + '</b>';
+    if(tap) c.onclick = () => tap(v);
+    el.appendChild(c); cars[v] = c;
+  });
+  const set = (a, hi = [], sel = -1) => a.forEach((v,i)=>{
+    cars[v].style.setProperty('--i', i);
+    cars[v].classList.toggle('hi', hi.includes(i));
+    cars[v].classList.toggle('sel', i === sel);
+  });
+  set(arr); return {set};
+}
+const slotW = (n, max) => Math.max(26, Math.min(max, Math.floor((Math.min(window.innerWidth, 640) - 70) / n)));
+
+/* ---------- 4) Coach: ลูกศรชี้แนะนำ + ปุ่ม Next ---------- */
+function coach(steps, done){
+  let k = 0, prev = null;
+  const show = () => {
+    if(prev) prev.classList.remove('spot');
+    if(k >= steps.length){ $('coach').style.display = $('shade').style.display = 'none'; return done(); }
+    const s = steps[k], t = $(s.el), r = t.getBoundingClientRect(), c = $('coach');
+    prev = t; t.classList.add('spot'); $('shade').style.display = 'block';
+    $('ctext').textContent = s.text; $('cnext').textContent = k === steps.length - 1 ? 'เริ่ม' : 'Next';
+    c.style.display = 'block';
+    const cx = r.left + r.width / 2, left = Math.max(8, Math.min(innerWidth - 268, cx - 130));
+    c.style.left = left + 'px'; c.style.top = (r.bottom + scrollY + 20) + 'px';
+    c.style.setProperty('--ax', Math.max(12, Math.min(238, cx - left - 10)) + 'px');
+  };
+  $('cnext').onclick = () => { k++; show(); };
+  show();
+}
+
+/* ---------- 5) Flow ---------- */
+function overlay(html){ $('ovc').innerHTML = html; $('ov').style.display = 'flex'; }
+function closeOv(){ $('ov').style.display = 'none'; }
+
+function startLevel(k){
+  L = k; mode = LEVELS[k].mode; data = LEVELS[k].d;
+  R = {sel:selectionSort(data), ins:insertionSort(data), bub:bubbleSort(data), mer:mergeSort(data)};
+  S = R.sel; I = R.ins; predOK = true; hints = 0;
+  if(mode === 'swap'){ opt = minSwaps(data); two = opt + 1; limit = opt + 2; }   // 3★=ขั้นต่ำ, 2★=+1, โควตา=+2 (ไม่ซ้อนกันแล้ว)
+  else { opt = I.mv; two = I.mv + 2; limit = I.mv + 4; }   // ด่านแทรก: ต้นทุน = จำนวนช่องที่รถเลื่อน
+  $('start').style.display = 'none'; $('game').style.display = 'block';
+  buildBoard(); locked = true;
+  // แผงทายแสดงใต้ลานจอด (ไม่บังรถ) แต่ละด่านถามไม่เหมือนกัน มี 4 ตัวเลือก
+  const ask = () => {
+    Q = makeQ(LEVELS[k].m); pending = true; $('hint').style.display = 'none';
+    $('pred').style.display = 'block';
+    $('pred').innerHTML = `<b>เลือก algorithm ก่อนเล่น</b><p>${Q.t}</p><div class="opts">` +
+      ORDER.map(x=>`<button onclick="predict('${x}')">${ALG[x]}</button>`).join('') + `</div>
+      <p class="mut" style="font-size:12px">Selection สลับน้อย · Insertion ดีเมื่อเกือบเรียง · Bubble หยุดได้ถ้าเรียงแล้ว · Merge แบ่งครึ่งแล้วรวม<br>เลือกผิด = ได้ดาวสูงสุด 2</p>`;
+  };
+  if(k === 0 && !seen0){
+    seen0 = true;
+    coach([{el:'lotbox', text:'เรียงรถเลข 1 → N จากซ้ายไปขวา รถจะออกตามลำดับ ก่อนเริ่มต้องเลือก algorithm ที่เหมาะกับลานนี้'},
+           {el:'lot', text:'แตะรถ 2 คันเพื่อสลับที่กัน'},
+           {el:'hudbox', text:'สลับได้จำกัดครั้ง ยิ่งน้อยยิ่งได้ดาวเยอะ'},
+           {el:'hbtn', text:'ติดแล้วกด 💡 เพื่อดูขั้นตอนถัดไปตาม Selection/Insertion (หัก 30 คะแนน)'}], ask);
+  } else if(mode === 'ins' && !seen3){
+    seen3 = true;
+    coach([{el:'lot', text:'โหมดแทรก: แตะรถ 1 คัน แล้วแตะรถที่ต้องการแทรกไปแทนที่ รถอื่นจะเลื่อนให้'},
+           {el:'hudbox', text:'นับตามจำนวนช่องที่เลื่อน เหมือน Insertion Sort'}], ask);
+  } else ask();
+}
+function predict(g){                          // ผู้เล่นเลือก algorithm (g = 'sel' | 'ins' | 'bub' | 'mer')
+  guess = g; predOK = g === Q.a; pending = false; locked = false;
+  $('pred').style.display = 'none'; $('hint').style.display = ''; goalText();
+}
+function goalText(){
+  $('goal').textContent = '★★★ ≤ ' + opt + '   ★★ ≤ ' + two + (predOK ? '' : '   (เลือกผิด: สูงสุด ★★)');
+}
+function buildBoard(){
+  cur = data.slice(); moves = 0; pick = null; $('pred').style.display = 'none'; $('hint').style.display = '';
+  lot = makeLot($('lot'), cur, slotW(cur.length, 62), tap);
+  $('lvname').textContent = LEVELS[L].n + ' · สไตล์ ' + (mode === 'swap' ? 'Selection (สลับ)' : 'Insertion (แทรก)');
+  $('unit').textContent = mode === 'swap' ? 'สลับ' : 'เลื่อน';
+  goalText();
+  $('hint').textContent = mode === 'swap' ? 'แตะ 2 คันเพื่อสลับ' : 'แตะรถ แล้วแตะตำแหน่งที่จะแทรก';
+  hud();
+}
+function hud(){
+  $('mv').textContent = moves; $('lim').textContent = limit; $('score').textContent = total;
+  $('mv').className = moves >= limit - 1 ? 'warn' : '';
+}
+function restartLevel(){ if(pending) return; closeOv(); buildBoard(); locked = false; }
+
+function tap(v){
+  if(locked) return;
+  const i = cur.indexOf(v);
+  if(pick === null){ pick = i; lot.set(cur, [], i); return; }
+  let cost = 0;
+  if(mode === 'swap'){                              // สลับ 2 คันที่เลือก (1 ครั้ง)
+    if(pick !== i){ [cur[pick], cur[i]] = [cur[i], cur[pick]]; cost = 1; }
+  } else {                                          // แทรก: ดึงรถออกแล้วใส่ที่ช่อง i รถอื่นเลื่อน
+    cost = Math.abs(i - pick);                      // เลื่อนไปกี่ช่อง = กี่ครั้ง
+    cur.splice(i, 0, cur.splice(pick, 1)[0]);
+  }
+  moves += cost; pick = null; lot.set(cur); hud();
+  if(moves > limit) return lose();                  // เกินโควตา (ด่านแทรกอาจเกินในครั้งเดียว) = แพ้
+  if(cur.every((x,k)=>x === k + 1)) return win();   // เรียง 1..N แล้ว = ชนะ
+  if(moves >= limit) lose();                        // โควตาหมดแต่ยังไม่เรียง = แพ้
+}
+/* คำใบ้: แสดงขั้นตอนถัดไปของ algorithm ที่ด่านนั้นใช้เป็นแบบอย่าง (หัก 30 คะแนน/ครั้ง)
+   - ด่านสลับ = Selection Sort: หาเบอร์เล็กสุดที่ยังไม่เข้าที่ แล้วสลับเข้าช่องหน้าสุดของส่วนที่ยังไม่เรียง
+   - ด่านแทรก = Insertion Sort: ฝั่งซ้ายเรียงแล้ว หยิบคันถัดไปแทรกเข้าตำแหน่งที่ถูกในฝั่งซ้าย */
+function useHint(){
+  if(locked || pending) return;
+  let hi, msg;
+  if(mode === 'swap'){
+    const i = cur.findIndex((x, k) => x !== k + 1);      // ช่องแรกที่ยังไม่ถูก = หัวของส่วนที่ยังไม่เรียง
+    if(i < 0) return;
+    const m = cur.indexOf(i + 1);                        // ตำแหน่งของตัวน้อยสุดที่เหลือ (คือเบอร์ i+1)
+    hi = [i, m];
+    msg = 'Selection: ตัวเล็กสุดที่เหลือคือเบอร์ ' + (i + 1) + ' → สลับเข้าช่องที่ ' + (i + 1);
+  } else {
+    let i = 1; while(i < cur.length && cur[i - 1] < cur[i]) i++;   // i = คันแรกที่ทำให้ฝั่งซ้ายไม่เรียง
+    if(i >= cur.length) return;
+    const key = cur[i]; let p = 0; while(cur[p] < key) p++;        // p = ตำแหน่งแทรกที่ถูกต้องในฝั่งซ้าย
+    hi = [i, p];
+    msg = 'Insertion: ฝั่งซ้ายเรียงแล้ว → แทรกเบอร์ ' + key + ' เข้าช่องที่ ' + (p + 1) + ' (เลื่อน ' + (i - p) + ' ช่อง)';
+  }
+  hints++; lot.set(cur, hi, pick);
+  $('hint').textContent = '💡 ' + msg;
+}
+function lose(){
+  locked = true;
+  overlay(`<h2>โควตาหมด!</h2><p class="mut">ลองใหม่อีกครั้ง</p><button onclick="restartLevel()">ลองใหม่</button>`);
+}
+function win(){
+  locked = true; $('lot').classList.add('go');      // รถออกจากลานตามลำดับ 1,2,3...
+  let stars = moves <= opt ? 3 : moves <= two ? 2 : 1;
+  if(!predOK) stars = Math.min(stars, 2);            // เลือก algorithm ผิด = ไม่เกิน 2 ดาว
+  const pts = Math.max(0, stars * 100 + (predOK ? 50 : 0) + (limit - moves) * 10 - hints * 30);
+  total += pts; hud();
+  setTimeout(() => showRace(stars, pts), 400 + cur.length * 220 + 700);
+}
+
+/* ---------- 6) บอทแข่ง (เล่นภาพ steps ของทั้ง 4 algorithm พร้อมกัน แล้วเฉลย) ---------- */
+function showRace(stars, pts){
+  const bots = ORDER.map(k => `<div class="bot"><div class="bh"><span>${ALG[k]}${k === guess ? ' (คุณเลือก)' : ''}</span><span id="l_${k}"></span></div><div class="scroller"><div class="lot" id="b_${k}"></div></div></div>`).join('');
+  overlay(`<div class="stars">${'★'.repeat(stars)}${'☆'.repeat(3 - stars)}</div>
+    <p>คุณ <b>${moves}</b> ครั้ง · +${pts}${hints ? ' (ใช้คำใบ้ ' + hints + ' ครั้ง −' + hints * 30 + ')' : ''}</p>
+    <p class="mut">${Q.t}<br>คุณเลือก ${ALG[guess]} → ${predOK ? 'ถูก +50' : 'ผิด (เฉลย ' + ALG[Q.a] + ') ได้สูงสุด 2 ดาว'}</p>` + bots + `<div id="verdict"></div>`);
+  const w = slotW(data.length, 30), lots = {};
+  const label = (k, s) => $('l_' + k).textContent = 'เทียบ ' + s.cmp + ' · ย้าย ' + s.mv;
+  ORDER.forEach(k => { lots[k] = makeLot($('b_' + k), data, w); label(k, {cmp:0, mv:0}); });
+  let k = 0; const n = Math.max(...ORDER.map(x => R[x].steps.length));
+  const t = setInterval(() => {
+    ORDER.forEach(x => { if(k < R[x].steps.length){ const s = R[x].steps[k]; lots[x].set(s.a, s.hi); label(x, s); } });
+    if(++k >= n){ clearInterval(t); verdict(); }
+  }, 750);
+}
+function verdict(){
+  const m = Q.m, best = R[Q.a][m];
+  ORDER.forEach(x => { if(R[x][m] === best) $('l_' + x).innerHTML += ' 🏆'; });
+  const last = L === LEVELS.length - 1;
+  $('verdict').innerHTML = `<p><b class="win">${ALG[Q.a]} ชนะ</b> <span class="mut">${METRIC[m]} น้อยสุด = ${best} ครั้ง</span></p><p class="mut">${WHY[Q.a]}</p>
+    <button onclick="${last ? 'finish()' : 'closeOv();startLevel(' + (L + 1) + ')'}">${last ? 'ผลรวม' : 'Next'}</button>`;
+}
+// ตารางเกณฑ์คะแนน (ในเกมแสดงตัวเลขของด่านปัจจุบัน)
+function showRules(){
+  const g = $('game').style.display !== 'none';
+  const a = g ? '≤ ' + opt + ' ครั้ง (ขั้นต่ำสุด)' : 'น้อยที่สุดเท่าที่เป็นไปได้',
+        b = g ? '≤ ' + two + ' ครั้ง' : 'ไม่เกินที่บอททำได้',
+        c = g ? '≤ ' + limit + ' ครั้ง' : 'ไม่เกินโควตา',
+        d = g ? '> ' + limit + ' ครั้ง' : 'เกินโควตา';
+  overlay(`<h2>วิธีให้คะแนน</h2>
+    <table><tr><th>ผลงาน</th><th>ดาว</th><th>คะแนน</th></tr>
+    <tr><td>${a}</td><td>★★★</td><td>300</td></tr>
+    <tr><td>${b}</td><td>★★</td><td>200</td></tr>
+    <tr><td>${c}</td><td>★</td><td>100</td></tr>
+    <tr><td>${d}</td><td>แพ้</td><td>0</td></tr>
+    <tr><td>เลือก algorithm ถูก</td><td></td><td>+50</td></tr>
+    <tr><td>เลือกผิด</td><td>สูงสุด ★★</td><td>ไม่ได้โบนัส</td></tr>
+    <tr><td>โควตาเหลือ</td><td></td><td>+10 / ครั้ง</td></tr>
+    <tr><td>ใช้คำใบ้ 💡</td><td></td><td>−30 / ครั้ง</td></tr></table>
+    <p class="mut">เกรด S ≥ 1200 · A ≥ 900 · B ≥ 600</p>
+    <button onclick="closeOv()">ปิด</button>`);
+}
+function finish(){
+  const g = total >= 1200 ? 'S' : total >= 900 ? 'A' : total >= 600 ? 'B' : 'C';
+  overlay(`<h2>จบเกม</h2><div class="big">${total} คะแนน</div><div class="stars">เกรด ${g}</div>
+    <p class="mut">Selection สลับน้อย · Insertion เร็วเมื่อเกือบเรียง · Merge เทียบน้อยเมื่อข้อมูลเยอะ</p>
+    <button onclick="location.reload()">เล่นใหม่</button>`);
+}
+</script>
+</body>
+</html>
